@@ -2,17 +2,16 @@ import torch
 from torch import nn
 from tqdm import tqdm
 
-from config import LR, MODEL_PATH, NUM_EPOCHS
-
+from config import LR, MODEL_PATH, NUM_EPOCHS, DEVICE
 
 
 class MNISTAutoencoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.linear1 = nn.Linear(28*28, 300)
-        self.linear2 = nn.Linear(300, 75)
+        self.linear2 = nn.Linear(300, 81)
 
-        self.linear3 = nn.Linear(75, 300)
+        self.linear3 = nn.Linear(81, 300)
         self.linear4 = nn.Linear(300, 28*28)
     
     def encode(self, x):
@@ -41,14 +40,14 @@ class MNISTAutoencoder(nn.Module):
 
         return x
     
-    def train(self, train_dataloader, device='cpu'):
+    def train(self, train_dataloader, test_dataloader):
         optimizer = torch.optim.Adam(self.parameters(), lr=LR)
-        loss_fn = torch.nn.MSELoss()
+        loss_fn = torch.nn.BCELoss()
 
         for _ in range(NUM_EPOCHS):
             loop = tqdm(enumerate(train_dataloader))
             for _, (x, _) in loop:
-                x = x.to(device)
+                x = x.to(DEVICE)
                 x_gen = self(x)
 
                 loss = loss_fn(x_gen, x)
@@ -58,5 +57,14 @@ class MNISTAutoencoder(nn.Module):
                 optimizer.step()
                 
                 loop.set_postfix(loss=loss.item())
+            
+            test_loss = torch.tensor([0.0], requires_grad=True)
+            test_loss = test_loss.to(DEVICE)
+            for i, (t,_) in enumerate(test_dataloader):
+                t = t.to(DEVICE)
+                t_gen = self(t)
+                test_loss += loss_fn(t_gen, t)
+            test_loss = test_loss/ i
+            print(f"test_loss={test_loss.item()}")
 
         torch.save(self,MODEL_PATH)

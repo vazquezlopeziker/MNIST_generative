@@ -6,50 +6,9 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 from autoencoder import MNISTAutoencoder
-from config import BATCH_SIZE, DATASET_ROOT, MODEL_PATH, TEST_IMG
-import cv2
+from config import BATCH_SIZE, DATASET_ROOT, DEVICE, MODEL_PATH, TEST_IMG
 
-
-DEVICE = torch.device(
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
-        else "cpu"
-    )
-
-def preview_dataset(train_data) -> None:
-    figure = plt.figure(figsize=(8,8))
-    cols, rows = 3, 3
-    for i in range(1, cols*rows+1):
-        idx = torch.randint(len(train_data), size=(1,),).item()
-        img, label = train_data[idx]
-        figure.add_subplot(cols, rows, i)
-        plt.title(label)
-        plt.axis("off")
-        print(img)
-        plt.imshow(img, cmap="gray")
-    plt.show()
-
-
-def compare_images(img0, img1):
-    figure = plt.figure(figsize=(8,8))
-    cols, rows = 2, 1
-    figure.add_subplot(cols, rows, 1)
-    plt.title("Img0")
-    plt.axis("off")
-    plt.imshow(img0, cmap="gray")
-    figure.add_subplot(cols, rows, 2)
-    plt.title("Img1")
-    plt.axis("off")
-    plt.imshow(img1, cmap="gray")
-    plt.show()
-
-
-def show_img(img):
-    plt.figure(figsize=(8,8))
-    plt.imshow(img, cmap="gray")
-    plt.show()
+from utils import compare_images
 
 
 if __name__ == "__main__":
@@ -66,13 +25,14 @@ if __name__ == "__main__":
         test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True)
 
         model = MNISTAutoencoder().to(DEVICE)
-        model.train(train_dataloader, device=DEVICE)
+        model.train(train_dataloader, test_dataloader)
         
     else:
         model = torch.load(MODEL_PATH).to(DEVICE)
 
-        img = cv2.imread(TEST_IMG, cv2.IMREAD_GRAYSCALE)
-        img = torch.Tensor(img / np.max(img))
+        train_data = datasets.MNIST(DATASET_ROOT, train=True, download= True, transform=ToTensor())
+        img, _ = train_data[0]
+
         image0 = torch.clone(img)
         image0 = torch.squeeze(image0)
         
@@ -83,8 +43,10 @@ if __name__ == "__main__":
         image1 = x_gen.to("cpu")
         image1 = image1.detach()
         image1 = image1.squeeze()
-        
+
         compare_images(image0, image1)
+
+        
 
 
     
