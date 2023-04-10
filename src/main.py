@@ -1,18 +1,15 @@
 import argparse
-import time
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 from autoencoder import MNISTAutoencoder
-from config import MODEL_PATH, TEST_IMG
-from vae import MNISTGenerative
+from config import BATCH_SIZE, DATASET_ROOT, MODEL_PATH, TEST_IMG
 import cv2
 
-DATASET_ROOT = "C:/Users/ikerv/Documents/VS_Code_repos/MNIST_generative/data/"
+
 DEVICE = torch.device(
         "cuda"
         if torch.cuda.is_available()
@@ -20,13 +17,6 @@ DEVICE = torch.device(
         if torch.backends.mps.is_available()
         else "cpu"
     )
-
-BATCH_SIZE = 512
-LR = 3e-4
-NUM_EPOCHS = 10
-
-MU = 0.5
-SIGMA = 1.0
 
 def preview_dataset(train_data) -> None:
     figure = plt.figure(figsize=(8,8))
@@ -41,6 +31,7 @@ def preview_dataset(train_data) -> None:
         plt.imshow(img, cmap="gray")
     plt.show()
 
+
 def compare_images(img0, img1):
     figure = plt.figure(figsize=(8,8))
     cols, rows = 2, 1
@@ -54,10 +45,12 @@ def compare_images(img0, img1):
     plt.imshow(img1, cmap="gray")
     plt.show()
 
+
 def show_img(img):
     plt.figure(figsize=(8,8))
     plt.imshow(img, cmap="gray")
     plt.show()
+
 
 if __name__ == "__main__":
 
@@ -75,7 +68,6 @@ if __name__ == "__main__":
         model = MNISTAutoencoder().to(DEVICE)
         model.train(train_dataloader, device=DEVICE)
         
-
     else:
         model = torch.load(MODEL_PATH).to(DEVICE)
 
@@ -91,6 +83,7 @@ if __name__ == "__main__":
         image1 = x_gen.to("cpu")
         image1 = image1.detach()
         image1 = image1.squeeze()
+        
         compare_images(image0, image1)
 
 
